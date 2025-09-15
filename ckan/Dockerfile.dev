@@ -40,7 +40,8 @@ RUN if ! [ /usr/share/zoneinfo/${TZ} -ef /etc/localtime ]; then \
 ### DCAT ###
 #RUN  pip3 install -e git+https://github.com/ckan/ckanext-dcat.git@v0.0.6#egg=ckanext-dcat && \
 #     pip3 install -r https://raw.githubusercontent.com/ckan/ckanext-dcat/v0.0.6/requirements.txt
-RUN pip3 install ckanext-dcat
+RUN pip3 install ckanext-dcat "rdflib>=4.2.2,<7.0.0" geomet>=0.2.0
+RUN pip3 install -e "git+https://github.com/ckan/ckanext-scheming.git#egg=ckanext-scheming"
 
 # Clone the extension(s) your are writing for your own project in the `src` folder
 # to get them mounted in this image at runtime
@@ -57,3 +58,6 @@ RUN for d in $APP_DIR/patches/*; do \
             done ; \
         fi ; \
     done
+
+# Add additional configuration files to be run at container startup
+COPY --chown=ckan-sys:ckan-sys docker-entrypoint.d/* /docker-entrypoint.d/
