@@ -49,6 +49,9 @@ RUN pip3 install -e "git+https://github.com/ckan/ckanext-scheming.git#egg=ckanex
 # Apply any patches needed to CKAN core or any of the built extensions (not the
 # runtime mounted ones)
 
+# Copy custom schemas
+COPY --chown=ckan-sys:ckan-sys schemas/ /srv/app/schemas/
+
 COPY patches ${APP_DIR}/patches
 
 RUN for d in $APP_DIR/patches/*; do \

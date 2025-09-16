@@ -1,0 +1,141 @@
+scheming_version: 2
+dataset_type: dataset
+about: Basic CKAN scheming schema - vanilla configuration
+about_url: https://github.com/ckan/ckanext-scheming
+
+dataset_fields:
+  - field_name: title
+    label: Title
+    preset: title
+    form_placeholder: "eg. A descriptive title"
+    
+  - field_name: name
+    label: URL
+    preset: dataset_slug
+    form_placeholder: "eg. my-dataset"
+    
+  - field_name: notes
+    label: Description
+    form_snippet: markdown.html
+    form_placeholder: "eg. Some useful notes about the data"
+    
+  - field_name: product_type
+    label: Product Type
+    preset: multiple_checkbox
+    required: true
+    choices:
+      - value: derived_dataset
+        label: Derived Dataset
+        help_text: "schema.org type: Dataset"
+      - value: map
+        label: Map
+        help_text: "schema.org type: Map"
+      - value: model
+        label: Model
+        help_text: "schema.org type: Dataset"
+      - value: dashboard
+        label: Dashboard
+        help_text: "schema.org type: Service"
+      - value: data_visualization
+        label: Data Visualization
+        help_text: "schema.org type: CreativeWork"
+      - value: infographic
+        label: Infographic
+        help_text: "schema.org type: CreativeWork"
+      - value: report
+        label: Report
+        help_text: "schema.org type: CreativeWork"
+    help_text: "Select all applicable product types. Multiple types can be selected (e.g., a tool that is both a map and dashboard)."
+    
+  - field_name: update_frequency
+    label: Frequency of Update
+    preset: select
+    choices:
+      - value: real_time
+        label: Real-time
+      - value: daily
+        label: Daily
+      - value: weekly
+        label: Weekly
+      - value: monthly
+        label: Monthly
+      - value: quarterly
+        label: Quarterly
+      - value: annually
+        label: Annually
+      - value: as_needed
+        label: As needed
+      - value: never
+        label: Never / Static
+      - value: unknown
+        label: Unknown
+    help_text: "How often is this product updated with new data or information?"
+    
+  - field_name: tag_string
+    label: Tags
+    preset: tag_string_autocomplete
+    form_placeholder: "eg. economy, mental health, government"
+    
+  - field_name: license_id
+    label: License
+    form_snippet: license.html
+    help_text: "License definitions and additional information can be found at http://opendefinition.org/"
+    
+  - field_name: owner_org
+    label: Organization
+    preset: dataset_organization
+    
+  - field_name: url
+    label: Source
+    form_placeholder: "http://example.com/dataset.json"
+    display_property: "foaf:homepage"
+    display_snippet: link.html
+    
+  - field_name: version
+    label: Version
+    validators: ignore_missing unicode_safe package_version_validator
+    form_placeholder: "1.0"
+    
+  - field_name: authors
+    label: Authors
+    repeating_label: Author
+    repeating_subfields:
+      - field_name: name
+        label: Name
+        required: true
+      - field_name: email
+        label: Email
+      - field_name: affiliation
+        label: OBIS Affiliation
+        form_placeholder: "e.g., OBIS, University of Example"
+    help_text: "Add all authors/contributors. Use 'Add Author' to add more."
+    
+  - field_name: maintainer
+    label: Maintainer
+    form_placeholder: "Joe Bloggs"
+    display_property: "dc:contributor"
+    
+  - field_name: maintainer_email
+    label: Maintainer Email
+    form_placeholder: "joe@example.com"
+    display_property: "dc:contributor"
+    display_snippet: email.html
+    display_email_name_field: "maintainer"
+
+resource_fields:
+  - field_name: url
+    label: URL
+    preset: resource_url_upload
+    
+  - field_name: name
+    label: Name
+    form_placeholder: "eg. January 2011 Gold Prices"
+    
+  - field_name: description
+    label: Description
+    form_snippet: markdown.html
+    form_placeholder: "Some useful notes about the data"
+    
+  - field_name: format
+    label: Format
+    preset: resource_format_autocomplete
