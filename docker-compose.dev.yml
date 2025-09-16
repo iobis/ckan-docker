@@ -33,6 +33,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5000"]
+volumes:
+  ckan_storage:
+  postgres_data:
     
   datapusher:
     container_name: ${DATAPUSHER_CONTAINER_NAME}
