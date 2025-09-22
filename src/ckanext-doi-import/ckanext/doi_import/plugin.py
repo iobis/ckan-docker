@@ -11,8 +11,6 @@ Test DOI: https://doi.org/10.5281/zenodo.11464531
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-import ckan.lib.navl.dictization_functions as df
-import ckan.model as model
 import requests
 import re
 import json
@@ -25,19 +23,37 @@ class DoiImportPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IActions)
+    plugins.implements(plugins.ITemplateHelpers)
 
     # IConfigurer
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
+        toolkit.add_public_directory(config_, 'public')
+        toolkit.add_resource('public', 'doi_import')
+
+    # ITemplateHelpers
+    def get_helpers(self):
+        """Provide helper functions for templates"""
+        return {
+            'doi_import_enabled': lambda: True
+        }
 
     # IBlueprint  
     def get_blueprint(self):
         from flask import Blueprint
         blueprint = Blueprint(self.name, __name__)
+        
+        # DOI import form
         blueprint.add_url_rule('/dataset/import-doi', 
                              'import_doi_form', 
                              self.import_doi_form, 
                              methods=['GET', 'POST'])
+        
+        # Dataset creation choice
+        blueprint.add_url_rule('/dataset/new-choice', 
+                             'dataset_new_choice', 
+                             self.dataset_new_choice, 
+                             methods=['GET'])
         return blueprint
 
     # IActions
@@ -46,6 +62,23 @@ class DoiImportPlugin(plugins.SingletonPlugin):
             'doi_fetch_metadata': doi_fetch_metadata,
             'doi_create_dataset': doi_create_dataset
         }
+
+    def dataset_new_choice(self):
+        """Show choice between manual dataset creation and DOI import"""
+        from flask import render_template
+        
+        context = {
+            'user': toolkit.c.user,
+            'auth_user_obj': toolkit.c.userobj
+        }
+        
+        # Check if user is authorized to create datasets
+        try:
+            toolkit.check_access('package_create', context)
+        except toolkit.NotAuthorized:
+            toolkit.abort(403, 'Not authorized to create datasets')
+        
+        return render_template('doi_import/dataset_new_choice.html')
 
     def import_doi_form(self):
         """Handle the DOI import form"""
@@ -66,24 +99,17 @@ class DoiImportPlugin(plugins.SingletonPlugin):
             except (AttributeError, toolkit.NotAuthorized):
                 user_orgs = []
             
-            # Get contributing organizations (your Ocean Expert groups)
+            # Get contributing organizations
             try:
                 groups = toolkit.get_action('group_list')(
                     context, {'all_fields': True}
                 )
-                # Filter to show only groups with ocean_expert_id
                 contributing_orgs = []
                 for group in groups:
-                    group_dict = toolkit.get_action('group_show')(
-                        context, {'id': group['id']}
-                    )
-                    for extra in group_dict.get('extras', []):
-                        if extra['key'] == 'ocean_expert_id':
-                            contributing_orgs.append({
-                                'value': group['id'],
-                                'label': group['display_name']
-                            })
-                            break
+                    contributing_orgs.append({
+                        'value': group['id'],
+                        'label': group['display_name']
+                    })
             except:
                 contributing_orgs = []
             
@@ -185,11 +211,13 @@ def fetch_zenodo_metadata(doi):
         response.raise_for_status()
         data = response.json()
         
+        # Add the record_id to the data for use in mapping
+        data['record_id'] = record_id
+        
         return map_zenodo_to_schema(data, doi)
         
     except requests.RequestException as e:
         raise toolkit.ValidationError({'doi': f'Failed to fetch Zenodo metadata: {str(e)}'})
-
 
 def map_zenodo_to_schema(zenodo_data, doi):
     """Map Zenodo metadata to your CKAN schema format"""
@@ -207,22 +235,29 @@ def map_zenodo_to_schema(zenodo_data, doi):
         'tag_string': ','.join([kw for kw in metadata.get('keywords', [])]),
     }
     
-    # Map authors to your repeating subfields format
+    # Map authors to your repeating subfields format - CORRECTED VERSION
     creators = metadata.get('creators', [])
-    authors = []
-    for i, creator in enumerate(creators):
-        author = {
-            f'authors__{i}__name': creator.get('name', ''),
-            f'authors__{i}__affiliation': creator.get('affiliation', ''),
-        }
-        # Try to extract email if available (often not public in Zenodo)
-        if 'orcid' in creator:
-            author[f'authors__{i}__email'] = ''  # Could potentially fetch from ORCID
-        authors.append(author)
+    authors_data = []
     
-    # Flatten authors into the format your schema expects
-    for author in authors:
-        mapped_data.update(author)
+    for creator in creators:
+        # Handle cases where affiliation might be a list
+        affiliation = creator.get('affiliation', '')
+        if isinstance(affiliation, list):
+            affiliation = ', '.join(affiliation)
+        
+        author_entry = {
+            'name': creator.get('name', ''),
+            'affiliation': str(affiliation) if affiliation else '',
+            'email': creator.get('email', '')  # Usually not available in Zenodo
+        }
+        authors_data.append(author_entry)
+    
+    # Set the authors field as a list for scheming to process
+    if authors_data:
+        mapped_data['authors'] = authors_data
+        
+    # Debug: Print the authors data structure
+    print(f"DEBUG: Authors data structure: {authors_data}")
     
     # Try to determine product type based on resource type
     resource_type = metadata.get('resource_type', {}).get('type', 'dataset')
@@ -231,16 +266,26 @@ def map_zenodo_to_schema(zenodo_data, doi):
     # Set update frequency based on publication type
     mapped_data['update_frequency'] = 'never'  # Most DOI datasets are static
     
-    # Add resources from files
+    # Create resources that link to Zenodo files instead of importing them
     resources = []
+    record_id = zenodo_data.get('record_id', '')
+
     for file_info in files:
         resource = {
             'name': file_info.get('key', file_info.get('filename', 'Download')),
-            'url': file_info.get('links', {}).get('self', ''),
+            'url': f"https://zenodo.org/record/{record_id}/files/{file_info.get('key', '')}",
             'format': file_info.get('type', '').upper(),
-            'description': f"File size: {file_info.get('size', 0)} bytes"
+            'description': f"Download from Zenodo. File size: {file_info.get('size', 0)} bytes"
         }
         resources.append(resource)
+
+    # Add main Zenodo record as a resource
+    resources.insert(0, {
+        'name': 'Zenodo Record',
+        'url': f"https://zenodo.org/record/{record_id}",
+        'format': 'HTML',
+        'description': 'View this dataset on Zenodo'
+    })
     
     mapped_data['resources'] = resources
     
@@ -248,7 +293,7 @@ def map_zenodo_to_schema(zenodo_data, doi):
     mapped_data['extras'] = [
         {'key': 'doi', 'value': doi},
         {'key': 'source', 'value': 'zenodo'},
-        {'key': 'zenodo_record_id', 'value': zenodo_data.get('id', '')},
+        {'key': 'zenodo_record_id', 'value': str(zenodo_data.get('record_id', ''))},
         {'key': 'publication_date', 'value': metadata.get('publication_date', '')},
     ]
     
@@ -282,13 +327,19 @@ def map_zenodo_resource_type(resource_type):
     
     return type_mapping.get(resource_type, ['derived_dataset'])
 
-
 def doi_create_dataset(context, data_dict):
-    """Create a dataset from DOI metadata"""
+    """Create or update a dataset from DOI metadata"""
     
     metadata = data_dict.get('metadata', {})
     owner_org = data_dict.get('owner_org')
     contributing_orgs = data_dict.get('contributing_organizations', [])
+    
+    # Extract DOI from the extras
+    doi = None
+    for extra in metadata.get('extras', []):
+        if extra.get('key') == 'doi':
+            doi = extra.get('value')
+            break
     
     # Add organization and contributing organizations
     if owner_org:
@@ -297,30 +348,39 @@ def doi_create_dataset(context, data_dict):
     if contributing_orgs:
         metadata['contributing_organizations'] = contributing_orgs
     
-    # Generate a URL-safe name from title and DOI
+    # Check if a dataset with this DOI already exists
+    if doi:
+        try:
+            search_context = context.copy()
+            search_context['ignore_auth'] = True
+            
+            search_results = toolkit.get_action('package_search')(
+                search_context, 
+                {'q': f'extras_doi:"{doi}"', 'rows': 1}
+            )
+            
+            if search_results['count'] > 0:
+                # Update existing dataset
+                existing_dataset = search_results['results'][0]
+                metadata['id'] = existing_dataset['id']
+                metadata['name'] = existing_dataset['name']
+                
+                dataset_dict = toolkit.get_action('package_update')(context, metadata)
+                return dataset_dict
+                
+        except Exception as e:
+            print(f"Error searching for existing dataset: {e}")
+    
+    # Create new dataset
     base_name = re.sub(r'[^\w\s-]', '', metadata.get('title', 'dataset')).lower()
     base_name = re.sub(r'[-\s]+', '-', base_name)[:50]
+    metadata['name'] = base_name or 'imported-dataset'
     
-    # Ensure uniqueness
-    name = base_name
-    counter = 1
-    while True:
-        try:
-            toolkit.get_action('package_show')(context, {'id': name})
-            name = f"{base_name}-{counter}"
-            counter += 1
-        except toolkit.ObjectNotFound:
-            break
-    
-    metadata['name'] = name
-    
-    # Create the dataset
     try:
         dataset_dict = toolkit.get_action('package_create')(context, metadata)
         return dataset_dict
     except toolkit.ValidationError as e:
         raise toolkit.ValidationError(f"Failed to create dataset: {e}")
-
 
 def fetch_datacite_metadata(doi):
     """Fallback: fetch metadata from DataCite API for non-Zenodo DOIs"""

@@ -1,0 +1,11 @@
+setup.py
+ckanext/__init__.py
+ckanext/doi_import/__init__.py
+ckanext/doi_import/plugin.py
+ckanext_doi_import.egg-info/PKG-INFO
+ckanext_doi_import.egg-info/SOURCES.txt
+ckanext_doi_import.egg-info/dependency_links.txt
+ckanext_doi_import.egg-info/entry_points.txt
+ckanext_doi_import.egg-info/namespace_packages.txt
+ckanext_doi_import.egg-info/requires.txt
+ckanext_doi_import.egg-info/top_level.txt

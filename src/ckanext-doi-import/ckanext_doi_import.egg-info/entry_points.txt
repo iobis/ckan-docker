@@ -1,0 +1,3 @@
+[ckan.plugins]
+doi_import = ckanext.doi_import.plugin:DoiImportPlugin
+

@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: ckanext-doi-import
+Version: 0.1.0
+Summary: CKAN extension for importing datasets from DOI
+Home-page: https://github.com/yourusername/ckanext-doi-import
+Author: Your Name
+Author-email: your.email@example.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Programming Language :: Python :: 3
+
+UNKNOWN
+
