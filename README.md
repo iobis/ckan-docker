@@ -1,4 +1,63 @@
-# Docker Compose setup for CKAN
+# OBIS Products Catalog  Installation Instructions
+
+We have developed multiple extensions, schema mapping, and forms. But it was important to us that this could be cloned and stood up locally with minimal effort. Below are instructions to do so.
+
+## Initial Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd ckan-docker
+   ```
+
+2. **Build and start the containers:**
+   ```bash
+   docker-compose -f docker-compose.dev.yml up -d --build
+   ```
+
+3. **Wait for all services to start** (check logs if needed):
+   ```bash
+   docker-compose -f docker-compose.dev.yml logs -f ckan-dev
+   ```
+
+## Install Custom Extensions
+
+After the containers are running, install the custom extensions:
+
+```bash
+# Install OBIS theme extension
+docker-compose -f docker-compose.dev.yml exec ckan-dev pip install -e /srv/app/src_extensions/ckanext-obis_theme
+
+# Install DOI import extension  
+docker-compose -f docker-compose.dev.yml exec ckan-dev pip install -e /srv/app/src_extensions/ckanext-doi-import
+
+# Restart CKAN to load the extensions
+docker-compose -f docker-compose.dev.yml restart ckan-dev
+```
+
+## Create Admin User
+
+```bash
+docker-compose -f docker-compose.dev.yml exec ckan-dev ckan sysadmin add admin email=admin@example.com
+```
+
+## Verify Installation
+
+- Visit `http://localhost:5000`
+- Check that the OBIS theme is applied
+- Navigate to `/dataset/import-doi` to test the DOI import feature
+
+## Extensions Included
+
+- **ckanext-obis_theme**: Custom theme for OBIS branding
+- **ckanext-doi-import**: Import datasets from DOI URLs (Zenodo, DataCite)
+- **ckanext-scheming**: Custom dataset schema support
+
+The extensions are mounted as volumes during development, so code changes are reflected immediately without rebuilding containers.
+
+-------
+
+# Generic Docker Compose setup for CKAN
 
 
 * [Overview](#overview)
