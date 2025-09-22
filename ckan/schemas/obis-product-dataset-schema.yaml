@@ -85,6 +85,13 @@ dataset_fields:
     label: Organization
     preset: dataset_organization
     
+  - field_name: contributing_organizations
+    label: Contributing Organizations
+    preset: multiple_checkbox
+    choices_helper: scheming_datastore_choices
+    datastore_choices_resource: organizations
+    help_text: "Select all organizations that contributed to this product. The primary organization is set above."
+    
   - field_name: url
     label: Source
     form_placeholder: "http://example.com/dataset.json"
