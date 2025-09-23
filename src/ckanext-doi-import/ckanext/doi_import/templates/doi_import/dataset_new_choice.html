@@ -34,7 +34,7 @@
                 <h3>{{ _("Import from DOI") }}</h3>
               </div>
               <div class="option-body">
-                <p>{{ _("Import dataset metadata automatically from a DOI (Digital Object Identifier) from Zenodo, DataCite, or other repositories.") }}</p>
+                <p>{{ _("Import dataset metadata automatically from a DOI (Digital Object Identifier) from Zenodo.") }}</p>
                 <a href="{{ h.url_for('doi_import.import_doi_form') }}" class="btn btn-success btn-lg">
                   <i class="fa fa-download"></i> {{ _("Import from DOI") }}
                 </a>
@@ -49,7 +49,7 @@
               <h4>{{ _("Which option should I choose?") }}</h4>
               <ul>
                 <li><strong>{{ _("Create Manually") }}</strong> - {{ _("Choose this if you're creating an original dataset or have all the metadata readily available.") }}</li>
-                <li><strong>{{ _("Import from DOI") }}</strong> - {{ _("Choose this if your dataset already exists in Zenodo, DataCite, or another repository with a DOI. The metadata will be automatically imported and you can modify it as needed.") }}</li>
+                <li><strong>{{ _("Import from with Zenodo DOI") }}</strong> - {{ _("Choose this if your dataset already exists in Zenodo with a DOI. The metadata will be automatically imported and you can modify it as needed.") }}</li>
               </ul>
             </div>
           </div>
@@ -57,20 +57,6 @@
       </div>
     </div>
   </article>
-{% endblock %}
-
-{% block secondary_content %}
-  <div class="module module-narrow module-shallow">
-    <h2 class="module-heading">{{ _("What is a DOI?") }}</h2>
-    <div class="module-content">
-      <p>{{ _("A Digital Object Identifier (DOI) is a unique identifier for digital content. Examples include:") }}</p>
-      <ul>
-        <li>https://doi.org/10.5281/zenodo.11464531</li>
-        <li>https://zenodo.org/record/11464531</li>
-        <li>10.5281/zenodo.11464531</li>
-      </ul>
-    </div>
-  </div>
 {% endblock %}
 
 <style>
