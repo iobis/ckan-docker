@@ -231,11 +231,11 @@ def map_zenodo_to_schema(zenodo_data, doi):
         'notes': metadata.get('description', ''),
         'url': f"https://doi.org/{doi}",
         'version': metadata.get('version', '1.0'),
-        'license_id': map_zenodo_license(metadata.get('license', {})),
+        'license_id': metadata.get('license', {}).get('id', 'notspecified'),
         'tag_string': ','.join([kw for kw in metadata.get('keywords', [])]),
     }
     
-    # Map authors to your repeating subfields format - CORRECTED VERSION
+    # Map authors to your repeating subfields format
     creators = metadata.get('creators', [])
     authors_data = []
     
@@ -255,16 +255,19 @@ def map_zenodo_to_schema(zenodo_data, doi):
     # Set the authors field as a list for scheming to process
     if authors_data:
         mapped_data['authors'] = authors_data
-        
-    # Debug: Print the authors data structure
-    print(f"DEBUG: Authors data structure: {authors_data}")
     
-    # Try to determine product type based on resource type
+    # Map product type based on resource type - return as list for multiple select
     resource_type = metadata.get('resource_type', {}).get('type', 'dataset')
-    mapped_data['product_type'] = map_zenodo_resource_type(resource_type)
+    product_types = map_zenodo_resource_type(resource_type)
     
-    # Set update frequency based on publication type
-    mapped_data['update_frequency'] = 'never'  # Most DOI datasets are static
+    # Handle product_type as multiple checkboxes (list format)
+    if isinstance(product_types, list):
+        mapped_data['product_type'] = product_types
+    else:
+        mapped_data['product_type'] = [product_types]
+    
+    # Set update frequency - use the exact value from your schema
+    mapped_data['update_frequency'] = 'never'
     
     # Create resources that link to Zenodo files instead of importing them
     resources = []
@@ -289,40 +292,67 @@ def map_zenodo_to_schema(zenodo_data, doi):
     
     mapped_data['resources'] = resources
     
-    # Add DOI and source information as extras
-    mapped_data['extras'] = [
+    # Add only metadata that should be extras (not schema fields)
+    extras = [
         {'key': 'doi', 'value': doi},
         {'key': 'source', 'value': 'zenodo'},
         {'key': 'zenodo_record_id', 'value': str(zenodo_data.get('record_id', ''))},
-        {'key': 'publication_date', 'value': metadata.get('publication_date', '')},
     ]
+    
+    # Add publication date if available
+    pub_date = metadata.get('publication_date', '')
+    if pub_date:
+        extras.append({'key': 'publication_date', 'value': pub_date})
+    
+    mapped_data['extras'] = extras
+    
+    # Debug: Print the mapped data structure
+    print(f"DEBUG: Mapped data structure: {mapped_data}")
     
     return mapped_data
 
-
-def map_zenodo_license(license_info):
-    """Map Zenodo license to CKAN license IDs"""
+def map_zenodo_license(rights_info):
+    """Map Zenodo rights to CKAN license IDs"""
+    
+    # Handle empty or missing rights
+    if not rights_info or not isinstance(rights_info, list):
+        return 'notspecified'
+    
+    # Get the first rights entry
+    if len(rights_info) == 0:
+        return 'notspecified'
+    
+    rights_entry = rights_info[0]
+    license_id = rights_entry.get('id', '')
+    
+    # License mapping (case-insensitive)
     license_mapping = {
-        'CC-BY-4.0': 'cc-by',
-        'CC-BY-SA-4.0': 'cc-by-sa', 
-        'CC0-1.0': 'cc-zero',
-        'MIT': 'mit-license',
-        'Apache-2.0': 'apache2-license',
+        'cc-by-4.0': 'cc-by',
+        'cc-by-sa-4.0': 'cc-by-sa', 
+        'cc0-1.0': 'cc-zero',
+        'mit': 'mit-license',
+        'apache-2.0': 'apache2-license',
     }
     
-    zenodo_license = license_info.get('id', 'notspecified')
-    return license_mapping.get(zenodo_license, 'notspecified')
+    # Try case-insensitive lookup
+    for zenodo_key, ckan_key in license_mapping.items():
+        if license_id.lower() == zenodo_key.lower():
+            return ckan_key
+    
+    return 'notspecified'
 
 
 def map_zenodo_resource_type(resource_type):
-    """Map Zenodo resource type to your product_type field"""
+    """Map Zenodo resource type to your product_type field values"""
     type_mapping = {
         'dataset': ['derived_dataset'],
         'software': ['model'],
         'publication-report': ['report'],
         'publication-article': ['report'],
+        'publication-presentation': ['presentation'],
         'image-figure': ['data_visualization'],
         'image-plot': ['data_visualization'],
+        'image-diagram': ['data_visualization'],
     }
     
     return type_mapping.get(resource_type, ['derived_dataset'])
@@ -341,12 +371,17 @@ def doi_create_dataset(context, data_dict):
             doi = extra.get('value')
             break
     
-    # Add organization and contributing organizations
+    # Add organization
     if owner_org:
         metadata['owner_org'] = owner_org
     
+    # Add contributing organizations - make sure this matches your schema field name
     if contributing_orgs:
-        metadata['contributing_organizations'] = contributing_orgs
+        # Handle both single and multiple contributing organizations
+        if isinstance(contributing_orgs, list):
+            metadata['contributing_organizations'] = contributing_orgs
+        else:
+            metadata['contributing_organizations'] = [contributing_orgs]
     
     # Check if a dataset with this DOI already exists
     if doi:
@@ -376,11 +411,16 @@ def doi_create_dataset(context, data_dict):
     base_name = re.sub(r'[-\s]+', '-', base_name)[:50]
     metadata['name'] = base_name or 'imported-dataset'
     
+    # Debug: Print final metadata before creation
+    print(f"DEBUG: Final metadata before creation: {metadata}")
+    
     try:
         dataset_dict = toolkit.get_action('package_create')(context, metadata)
         return dataset_dict
     except toolkit.ValidationError as e:
+        print(f"ERROR: Validation error during dataset creation: {e}")
         raise toolkit.ValidationError(f"Failed to create dataset: {e}")
+
 
 def fetch_datacite_metadata(doi):
     """Fallback: fetch metadata from DataCite API for non-Zenodo DOIs"""

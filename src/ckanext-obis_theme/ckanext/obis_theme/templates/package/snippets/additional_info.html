@@ -17,7 +17,25 @@
         </div>
     {% endif %}
 
-    {% if pkg_dict.author_email %}
+    {# Display custom authors field if available #}
+    {% if pkg_dict.authors %}
+      <div class="add-info-row">
+        <div class="add-info-label">{{ _("Authors") }}</div>
+        <div class="add-info-value">
+          {% for author in pkg_dict.authors %}
+            <div class="author-entry">
+              {{ author.name }}
+              {% if author.affiliation %}
+                ({{ author.affiliation }})
+              {% endif %}
+              {% if author.email %}
+                - {{ h.mail_to(email_address=author.email) }}
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% elif pkg_dict.author_email %}
       <div class="add-info-row">
         <div class="add-info-label">{{ _("Author") }}</div>
         <div class="add-info-value" property="dc:creator">{{ h.mail_to(email_address=pkg_dict.author_email, name=pkg_dict.author) }}</div>
@@ -65,20 +83,31 @@
         {% if pkg_dict.metadata_created %}
           <div class="add-info-row">
             <div class="add-info-label">{{ _("Created") }}</div>
-
             <div class="add-info-value">
                 {% snippet 'snippets/local_friendly_datetime.html', datetime_obj=pkg_dict.metadata_created %}
             </div>
           </div>
         {% endif %}
 
+      <!-- Block extras that are showing up strangely -->
       {% block extras scoped %}
+        {# Define fields to exclude from display - these should be handled by schema #}
+        {% set excluded_fields = [
+          'update_frequency', 'frequency_of_update', 
+          'product_type', 'contributing_organizations', 
+          'authors', 'source', 'zenodo_record_id'
+        ] %}
+        
         {% for extra in h.sorted_extras(pkg_dict.extras) %}
+        TEMP DEBUG: {{ key }} = {{ value }} (excluded: {{ key in excluded_fields }})
           {% set key, value = extra %}
-          <div class="add-info-row" rel="dc:relation" resource="_:extra{{ i }}">
-            <div class="add-info-label" property="rdfs:label">{{ _(key|e) }}</div>
-            <div class="add-info-value {{ h.dataset_type_class(value) }}" property="rdf:value">{{ value }}</div>
-          </div>
+          {# Only show extras that are not schema fields #}
+          {% if key not in excluded_fields and value and value != '' %}
+            <div class="add-info-row" rel="dc:relation" resource="_:extra{{ loop.index }}">
+              <div class="add-info-label" property="rdfs:label">{{ _(key|title|replace('_', ' ')|e) }}</div>
+              <div class="add-info-value {{ h.dataset_type_class(value) }}" property="rdf:value">{{ value }}</div>
+            </div>
+          {% endif %}
         {% endfor %}
       {% endblock %}
   </div>

@@ -599,3 +599,40 @@ h2.organization-side {
     padding-left: 10px;
     border-radius: 10px;
 }
+
+/* Additional Info Section Styling on Dataset page */
+/* Target the additional-info section specifically */
+.additional-info {
+  line-height: 1.6;
+}
+
+/* Force line breaks after field labels in scheming output */
+.additional-info > *:not(h3) {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Hide empty maintainer fields */
+.additional-info > *:empty {
+  display: none;
+}
+
+/* Responsive layout for larger screens */
+@media (min-width: 768px) {
+    .add-info-row {
+        display: flex;
+        margin-bottom: 12px;
+    }
+    
+    .add-info-label {
+        flex: 0 0 30%;
+        margin-right: 15px;
+        margin-bottom: 0;
+        padding-right: 10px;
+    }
+    
+    .add-info-value {
+        flex: 1;
+        margin-bottom: 0;
+    }
+}

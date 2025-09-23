@@ -22,6 +22,7 @@ dataset_fields:
   - field_name: product_type
     label: Product Type
     preset: multiple_checkbox
+    display_snippet: null
     required: true
     choices:
       - value: derived_dataset
@@ -45,11 +46,15 @@ dataset_fields:
       - value: report
         label: Report
         help_text: "schema.org type: CreativeWork"
+      - value: presentation
+        label: Presentation
+        help_text: "schema.org type: CreativeWork"
     help_text: "Select all applicable product types. Multiple types can be selected (e.g., a tool that is both a map and dashboard)."
     
   - field_name: update_frequency
     label: Frequency of Update
     preset: select
+    display_snippet: null
     choices:
       - value: real_time
         label: Real-time
@@ -88,6 +93,7 @@ dataset_fields:
   - field_name: contributing_organizations
     label: Contributing Organizations
     preset: multiple_checkbox
+    display_snippet: null
     choices_helper: scheming_datastore_choices
     datastore_choices_resource: organizations
     help_text: "Select all organizations that contributed to this product. The primary organization is set above."
