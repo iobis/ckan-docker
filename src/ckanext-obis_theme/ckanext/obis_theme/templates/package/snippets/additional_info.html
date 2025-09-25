@@ -1,156 +1,119 @@
-{#
-CKAN-compatible additional_info.html template
-Fixes formatting issues and removes unwanted fields
-#}
+{# Clean additional info template that shows only relevant fields #}
 
-{% block package_additional_info %}
-  <section class="additional-info">
-    <h3>{{ _('Additional Info') }}</h3>
-    
-    <table class="table table-striped table-bordered table-condensed">
-      <thead>
+<section class="additional-info">
+  <h3>{{ _('Additional Info') }}</h3>
+  
+  <table class="table table-striped table-bordered table-condensed">
+    <thead>
+      <tr>
+        <th scope="col">{{ _('Field') }}</th>
+        <th scope="col">{{ _('Value') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {# Authors - handle the repeating subfields #}
+      {% if c.pkg_dict.authors %}
         <tr>
-          <th scope="col">{{ _('Field') }}</th>
-          <th scope="col">{{ _('Value') }}</th>
+          <th scope="row">{{ _('Authors') }}</th>
+          <td>
+            {% for author in c.pkg_dict.authors %}
+              <div style="margin-bottom: 8px;">
+                <strong>{{ author.name }}</strong>
+                {% if author.email %}<br><em>{{ author.email }}</em>{% endif %}
+                {% if author.affiliation %}<br>{{ author.affiliation }}{% endif %}
+              </div>
+            {% endfor %}
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {# Version #}
-        {% if c.pkg_dict.version %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Version') }}</th>
-            <td class="dataset-details">{{ c.pkg_dict.version }}</td>
-          </tr>
-        {% endif %}
+      {% endif %}
 
-        {# Authors - handle specially for proper formatting #}
-        {% if c.pkg_dict.authors %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Authors') }}</th>
-            <td class="dataset-details">
-              {% if c.pkg_dict.authors is string %}
-                {{ c.pkg_dict.authors }}
-              {% else %}
-                {% for author in c.pkg_dict.authors %}
-                  <div class="author-entry">
-                    {% if author.name %}
-                      <strong>{{ author.name }}</strong>
-                      {% if author.email %}<br><em>{{ author.email }}</em>{% endif %}
-                      {% if author.affiliation %}<br>{{ author.affiliation }}{% endif %}
-                    {% else %}
-                      {{ author }}
-                    {% endif %}
-                  </div>
-                {% endfor %}
-              {% endif %}
-            </td>
-          </tr>
-        {% endif %}
+      {# Product Type #}
+      {% if c.pkg_dict.product_type %}
+        <tr>
+          <th scope="row">{{ _('Product Type') }}</th>
+          <td>
+            {% if c.pkg_dict.product_type is string %}
+              {{ c.pkg_dict.product_type }}
+            {% else %}
+              {{ c.pkg_dict.product_type | join(', ') }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
 
-        {# Product Type #}
-        {% if c.pkg_dict.product_type %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Product Type') }}</th>
-            <td class="dataset-details">
-              {% if c.pkg_dict.product_type is string %}
-                {{ c.pkg_dict.product_type }}
-              {% elif c.pkg_dict.product_type is iterable %}
-                {% for ptype in c.pkg_dict.product_type %}
-                  {{ ptype }}{% if not loop.last %}, {% endif %}
-                {% endfor %}
-              {% endif %}
-            </td>
-          </tr>
-        {% endif %}
+      {# Update Frequency #}
+      {% if c.pkg_dict.update_frequency %}
+        <tr>
+          <th scope="row">{{ _('Update Frequency') }}</th>
+          <td>{{ c.pkg_dict.update_frequency }}</td>
+        </tr>
+      {% endif %}
 
-        {# Contributing Organizations #}
-        {% if c.pkg_dict.contributing_organization %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Contributing Organizations') }}</th>
-            <td class="dataset-details">
-              {% if c.pkg_dict.contributing_organization is string %}
-                {{ c.pkg_dict.contributing_organization }}
-              {% elif c.pkg_dict.contributing_organization is iterable %}
-                {% for org in c.pkg_dict.contributing_organization %}
-                  {{ org }}{% if not loop.last %}, {% endif %}
-                {% endfor %}
-              {% endif %}
-            </td>
-          </tr>
-        {% endif %}
+      {# Contributing Organizations #}
+      {% if c.pkg_dict.contributing_organizations %}
+        <tr>
+          <th scope="row">{{ _('Contributing Organizations') }}</th>
+          <td>
+            {% if c.pkg_dict.contributing_organizations is string %}
+              {{ c.pkg_dict.contributing_organizations }}
+            {% else %}
+              {{ c.pkg_dict.contributing_organizations | join(', ') }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
 
-        {# Handle other standard fields from extras, excluding problematic ones #}
-        {% for extra in c.pkg_dict.extras %}
-          {% set exclude_keys = ['frequency_of_update', 'frequency-of-update', 'authors', 'version', 'product_type', 'contributing_organization'] %}
-          {% if extra.key not in exclude_keys and extra.value and extra.value != '' %}
-            <tr>
-              <th scope="row" class="dataset-label">
-                {{ extra.key.replace('_', ' ').replace('-', ' ').title() }}
-              </th>
-              <td class="dataset-details">{{ extra.value }}</td>
-            </tr>
-          {% endif %}
-        {% endfor %}
+      {# Version #}
+      {% if c.pkg_dict.version %}
+        <tr>
+          <th scope="row">{{ _('Version') }}</th>
+          <td>{{ c.pkg_dict.version }}</td>
+        </tr>
+      {% endif %}
 
-        {# License #}
-        {% if c.pkg_dict.license_title %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('License') }}</th>
-            <td class="dataset-details">
-              {% if c.pkg_dict.license_url %}
-                <a href="{{ c.pkg_dict.license_url }}" target="_blank">{{ c.pkg_dict.license_title }}</a>
-              {% else %}
-                {{ c.pkg_dict.license_title }}
-              {% endif %}
-            </td>
-          </tr>
-        {% endif %}
+      {# License #}
+      {% if c.pkg_dict.license_title %}
+        <tr>
+          <th scope="row">{{ _('License') }}</th>
+          <td>
+            {% if c.pkg_dict.license_url %}
+              <a href="{{ c.pkg_dict.license_url }}" target="_blank">{{ c.pkg_dict.license_title }}</a>
+            {% else %}
+              {{ c.pkg_dict.license_title }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
 
-        {# Date Created #}
-        {% if c.pkg_dict.metadata_created %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Date Created') }}</th>
-            <td class="dataset-details">{{ h.render_datetime(c.pkg_dict.metadata_created, with_hours=False) }}</td>
-          </tr>
-        {% endif %}
+      {# Maintainer #}
+      {% if c.pkg_dict.maintainer %}
+        <tr>
+          <th scope="row">{{ _('Maintainer') }}</th>
+          <td>
+            {% if c.pkg_dict.maintainer_email %}
+              <a href="mailto:{{ c.pkg_dict.maintainer_email }}">{{ c.pkg_dict.maintainer }}</a>
+            {% else %}
+              {{ c.pkg_dict.maintainer }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
 
-        {# Last Updated #}
-        {% if c.pkg_dict.metadata_modified %}
-          <tr>
-            <th scope="row" class="dataset-label">{{ _('Last Updated') }}</th>
-            <td class="dataset-details">{{ h.render_datetime(c.pkg_dict.metadata_modified, with_hours=False) }}</td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </section>
+      {# Date Created #}
+      {% if c.pkg_dict.metadata_created %}
+        <tr>
+          <th scope="row">{{ _('Date Created') }}</th>
+          <td>{{ h.render_datetime(c.pkg_dict.metadata_created, with_hours=False) }}</td>
+        </tr>
+      {% endif %}
 
-  <style>
-  /* Ensure proper spacing and line breaks */
-  .additional-info .dataset-label {
-    width: 30%;
-    vertical-align: top;
-    padding: 8px 12px;
-    font-weight: bold;
-    line-height: 1.5;
-  }
-
-  .additional-info .dataset-details {
-    vertical-align: top;
-    padding: 8px 12px;
-    line-height: 1.5;
-  }
-
-  .additional-info .author-entry {
-    margin-bottom: 8px;
-  }
-
-  .additional-info .author-entry:last-child {
-    margin-bottom: 0;
-  }
-
-  .additional-info .author-entry em {
-    color: #666;
-  }
-  </style>
-{% endblock %}
+      {# Last Updated #}
+      {% if c.pkg_dict.metadata_modified %}
+        <tr>
+          <th scope="row">{{ _('Last Updated') }}</th>
+          <td>{{ h.render_datetime(c.pkg_dict.metadata_modified, with_hours=False) }}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</section>

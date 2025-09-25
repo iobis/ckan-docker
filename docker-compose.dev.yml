@@ -17,6 +17,8 @@ services:
         - TZ=${TZ}
     env_file:
       - .env
+    environment:
+      - HARVEST_API_TOKEN=${HARVEST_API_TOKEN}
     depends_on:
       db:
         condition: service_healthy
@@ -31,6 +33,8 @@ services:
       - ./src:/srv/app/src_extensions
       - ./ckan/schemas:/srv/app/schemas
       - postgres_data:/var/lib/postgresql/data  
+      - ./scripts:/srv/app/scripts
+      - ./ckan/config:/srv/app/ckan/config:ro 
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5000"]
