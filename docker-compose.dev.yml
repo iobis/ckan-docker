@@ -31,6 +31,7 @@ services:
       - ./src:/srv/app/src_extensions
       - ./ckan/schemas:/srv/app/schemas
       - postgres_data:/var/lib/postgresql/data  
+      - ./ckan/config/licenses.json:/srv/app/ckan/config/licenses.json:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:5000"]
