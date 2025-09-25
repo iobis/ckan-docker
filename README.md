@@ -2,6 +2,7 @@
 
 We have developed multiple extensions, schema mapping, and forms. But it was important to us that this could be cloned and stood up locally with minimal effort. Below are instructions to do so.
 
+_To reload the SQL dump for development: `docker-compose exec db psql -U ckan -d ckan -f /backup/metadata_dump.sql`
 ## Initial Setup
 
 1. **Clone the repository:**
