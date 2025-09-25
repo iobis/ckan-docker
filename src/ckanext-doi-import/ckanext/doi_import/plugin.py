@@ -328,6 +328,7 @@ def map_zenodo_license(rights_info):
     # License mapping (case-insensitive)
     license_mapping = {
         'cc-by-4.0': 'cc-by',
+        'CC-BY-NC-4.0': 'cc-nc',
         'cc-by-sa-4.0': 'cc-by-sa', 
         'cc0-1.0': 'cc-zero',
         'mit': 'mit-license',
