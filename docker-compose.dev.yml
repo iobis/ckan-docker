@@ -8,7 +8,7 @@ volumes:
 
 services:
 
-  ckan-dev:
+  ckan:
     container_name: ${CKAN_CONTAINER_NAME}
     build:
       context: ckan/
